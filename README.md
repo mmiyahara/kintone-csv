@@ -1,2 +1,2 @@
 # kintone-csv
-Command-line tool that fetches Kintone data and exports it in CSV format
+Python Script that fetches Kintone data and exports it in CSV format

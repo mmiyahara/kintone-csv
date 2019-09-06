@@ -1,52 +1,9 @@
-import base64
 import csv
 import datetime
 import dateutil.parser as parser
-import http
-import json
-import os
-import urllib.request
+import kintone_util
 
-# TODO: Generate CSV file
 # TODO: Create docstring
-# TODO: Make fetch_kintone_records as module
-# TODO: Write test code
-
-# TODO: Modify the codes to allow user to pass these variables from arguments or envitonmental variables
-DOMAIN = os.environ['KINTONE_DOMAIN']
-USERNAME = os.environ['KINTONE_USERNAME']
-PASSWORD = os.environ['KINTONE_PASSWORD']
-BASE64ENCODED = base64.b64encode('{}:{}'.format(USERNAME, PASSWORD).encode('utf-8')).decode('utf-8')
-PATH = '/k/v1/records.json'
-URL = 'https://{}{}'.format(DOMAIN, PATH)
-
-def fetch_kintone_records(fields, app, query):
-  headers = {
-    'Content-Type': 'application/json',
-    'X-Cybozu-Authorization': BASE64ENCODED
-  }
-  data = {
-    'app': app,
-    'fields': fields,
-    'query': query
-  }
-  req = urllib.request.Request(
-    url = URL,
-    data = json.dumps(data).encode(),
-    headers = headers,
-    method = 'GET'
-  )
-
-  # TODO: fetch records more than 500
-  try:
-    res = urllib.request.urlopen(req)
-  except urllib.error.HTTPError as err:
-    print(err)
-  except urllib.error.URLError as err:
-    print(err)
-
-  body = json.loads(res.read())
-  return body['records']
 
 def create_record_dirs(records, fields):
   record_dirs = []
@@ -87,29 +44,43 @@ def create_record_dirs(records, fields):
   return record_dirs
 
 def create_header(record_dirs):
-  return
+  record_dir = record_dirs[0]
+  header = []
+  i = 0
+  while i < len(record_dir):
+    for code in record_dir:
+      if i == record_dir[code]['index']:
+        header.append(code)
+        i += 1
+  return header
 
-def create_rows(record_dirs):
-  return
+def create_rows(header, record_dirs):
+  rows = []
+  for record_dir in record_dirs:
+    row = []
+    for code in header:
+      row.append(record_dir[code]['value'])
+    rows.append(row)
+  return rows
 
 def main():
   # TODO: Pass these variables from arguments
   # TODO: Pass a list of fields and convert it into array
   fields = ['$id', '時刻', '作成日時', '文字列__複数行_', 'チェックボックス', '添付ファイル']
-  app = 43185
+  app = 283
   query = ''
-  filename = 'test.csv'
 
-  records = fetch_kintone_records(fields, app, query)
+  records = kintone_util.get_all_records(fields, app, query)
   record_dirs = create_record_dirs(records, fields)
-  print(record_dirs)
-  # header = create_header(record_dirs)
-  # rows = create_rows(record_dirs)
+  header = create_header(record_dirs)
+  rows = create_rows(header, record_dirs)
 
-  # with open(filename, 'w') as f:
-  #   writer = csv.writer(f, lineterminator='\n')
-  #   writer.writerow(header)
-  #   writer.writerows(rows)
+  # TODO: Modify filename more appropriate one
+  filename = 'test.csv'
+  with open(filename, 'w') as f:
+    writer = csv.writer(f, lineterminator='\n')
+    writer.writerow(header)
+    writer.writerows(rows)
 
 if __name__ == '__main__':
   main()
